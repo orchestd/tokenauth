@@ -3,9 +3,9 @@ module github.com/orchestd/tokenauth
 go 1.14
 
 require (
-	github.com/orchestd/cacheStorage v0.18.7
+	github.com/orchestd/cacheStorage v0.18.8
 	github.com/orchestd/configurations v0.10.2
-	github.com/orchestd/dependencybundler v0.40.8
+	github.com/orchestd/dependencybundler v0.40.10
 	github.com/orchestd/serviceerror v0.4.0
 	github.com/orchestd/sharedlib v0.13.2
 	github.com/gin-gonic/gin v1.8.1
