@@ -65,7 +65,7 @@ func (jwtToken jwtToken) createToken(now time.Time, lifeTimeMin int64, sessionId
 	if err != nil {
 		return "", fmt.Errorf("can't marshal plainData. " + err.Error())
 	}
-	encryptedData, err := encryption.Encrypt(string(protectedDataJson), encryptKey)
+	encryptedData, err := encryption.EncryptBase64AES(string(protectedDataJson), encryptKey)
 	if err != nil {
 		return "", fmt.Errorf("can't encrypt protected data. " + err.Error())
 	}
@@ -140,7 +140,7 @@ func (jwtToken jwtToken) ValidateAndGetData(c context.Context, now time.Time, to
 	}
 
 	encryptedData := atClaims[dataClaim].(string)
-	decryptedData, err := encryption.Decrypt(encryptedData, encryptKey)
+	decryptedData, err := encryption.DecryptBase64AES(encryptedData, encryptKey)
 	if err != nil {
 		return nil, nil, fmt.Errorf("can't dycript data. " + err.Error())
 	}
