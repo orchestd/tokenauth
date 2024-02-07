@@ -21,7 +21,7 @@ const plainDataClaim = "plainData"
 const dataClaim = "data"
 const refreshTokensCollectionName = "refreshTokens"
 
-//must have this name
+// must have this name
 const expClaim = "exp"
 const iatClaim = "iat"
 
@@ -169,7 +169,10 @@ func (jwtToken jwtToken) ValidateAndUseRefreshToken(c context.Context, now time.
 	if err != nil {
 		return nil, nil, err
 	}
-	refreshTokenUuid := protectedData["uuid"].(string)
+	refreshTokenUuid, ok := protectedData["uuid"].(string)
+	if !ok {
+		return nil, nil, fmt.Errorf("can not validate refreshToken token is not valid: uuid not found in protectedData")
+	}
 	refreshToken := RefreshToken{}
 	err = jwtToken.cacheGetter.GetById(c, refreshTokensCollectionName, refreshTokenUuid, "1", &refreshToken)
 	if err != nil {
