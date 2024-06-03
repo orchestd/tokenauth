@@ -11,10 +11,13 @@ import (
 const tokenHeader = "token"
 const TokenDataContextKey = "tokenData"
 
-var pathToExclude = []string{"/refreshToken", "/connect"}
+type PathToExcludeGetter interface {
+	GetPathToExclude() []string
+}
 
-func CheckTokenMiddleware(baseToken TokenBase) gin.HandlerFunc {
+func CheckTokenMiddleware(baseToken TokenBase, pathToExcludeGetter PathToExcludeGetter) gin.HandlerFunc {
 	return func(c *gin.Context) {
+		pathToExclude := pathToExcludeGetter.GetPathToExclude()
 		for _, p := range pathToExclude {
 			if p == c.FullPath() {
 				c.Next()
