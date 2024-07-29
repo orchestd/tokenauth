@@ -46,7 +46,7 @@ type jwtToken struct {
 func (jwtToken jwtToken) getAccessTokenLifeTimeMin() int {
 	if jwtToken.conf.Get("AccessTokenLifeTimeMin").IsSet() {
 		lifeTimeMin, err := jwtToken.conf.Get("AccessTokenLifeTimeMin").Int()
-		if err != nil {
+		if err == nil {
 			return lifeTimeMin
 		}
 	}
@@ -56,7 +56,7 @@ func (jwtToken jwtToken) getAccessTokenLifeTimeMin() int {
 func (jwtToken jwtToken) getRefreshTokenLifeTimeMin() int {
 	if jwtToken.conf.Get("RefreshTokenLifeTimeMin").IsSet() {
 		lifeTimeMin, err := jwtToken.conf.Get("RefreshTokenLifeTimeMin").Int()
-		if err != nil {
+		if err == nil {
 			return lifeTimeMin
 		}
 	}
