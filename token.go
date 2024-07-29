@@ -7,6 +7,7 @@ import (
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/orchestd/dependencybundler/interfaces/cache"
+	"github.com/orchestd/dependencybundler/interfaces/configuration"
 	"github.com/orchestd/dependencybundler/interfaces/credentials"
 	"github.com/orchestd/serviceerror"
 	"github.com/orchestd/sharedlib/encryption"
@@ -30,14 +31,36 @@ type RefreshToken struct {
 	UsedAt   *time.Time
 }
 
-func NewJwtToken(credentials credentials.CredentialsGetter, cacheGetter cache.CacheStorageGetter, cacheSetter cache.CacheStorageSetter) TokenBase {
-	return jwtToken{credentials: credentials, cacheGetter: cacheGetter, cacheSetter: cacheSetter}
+func NewJwtToken(credentials credentials.CredentialsGetter, cacheGetter cache.CacheStorageGetter,
+	cacheSetter cache.CacheStorageSetter, conf configuration.Config) TokenBase {
+	return jwtToken{credentials: credentials, cacheGetter: cacheGetter, cacheSetter: cacheSetter, conf: conf}
 }
 
 type jwtToken struct {
 	credentials credentials.CredentialsGetter
 	cacheGetter cache.CacheStorageGetter
 	cacheSetter cache.CacheStorageSetter
+	conf        configuration.Config
+}
+
+func (jwtToken jwtToken) getAccessTokenLifeTimeMin() int {
+	if jwtToken.conf.Get("AccessTokenLifeTimeMin").IsSet() {
+		lifeTimeMin, err := jwtToken.conf.Get("AccessTokenLifeTimeMin").Int()
+		if err != nil {
+			return lifeTimeMin
+		}
+	}
+	return accessTokenLifeTimeMin
+}
+
+func (jwtToken jwtToken) getRefreshTokenLifeTimeMin() int {
+	if jwtToken.conf.Get("RefreshTokenLifeTimeMin").IsSet() {
+		lifeTimeMin, err := jwtToken.conf.Get("RefreshTokenLifeTimeMin").Int()
+		if err != nil {
+			return lifeTimeMin
+		}
+	}
+	return refreshTokenLifeTimeMin
 }
 
 func (jwtToken jwtToken) getSecret() ([]byte, error) {
@@ -48,7 +71,7 @@ func (jwtToken jwtToken) getSecret() ([]byte, error) {
 	return []byte(jwtSecretFirst + jwtSecret), nil
 }
 
-func (jwtToken jwtToken) createToken(now time.Time, lifeTimeMin int64, sessionId string, customerId string,
+func (jwtToken jwtToken) createToken(now time.Time, lifeTimeMin int, sessionId string, customerId string,
 	protectedData map[string]interface{}, plainData map[string]interface{}) (string, error) {
 	encryptKey := jwtToken.credentials.GetCredentials().EncryptKey
 	if encryptKey == "" {
@@ -87,13 +110,13 @@ func (jwtToken jwtToken) CreateTokensPair(c context.Context, now time.Time, sess
 	refreshTokenUuid := uuid.New().String()
 
 	protectedData["refreshTokenUuid"] = refreshTokenUuid
-	accessToken, err := jwtToken.createToken(now, accessTokenLifeTimeMin, sessionId, customerId, protectedData, plainData)
+	accessToken, err := jwtToken.createToken(now, jwtToken.getAccessTokenLifeTimeMin(), sessionId, customerId, protectedData, plainData)
 	if err != nil {
 		return "", "", fmt.Errorf("can't create asscess token. " + err.Error())
 	}
 
 	protectedData["uuid"] = refreshTokenUuid
-	refreshToken, err := jwtToken.createToken(now, refreshTokenLifeTimeMin, sessionId, customerId, protectedData, plainData)
+	refreshToken, err := jwtToken.createToken(now, jwtToken.getRefreshTokenLifeTimeMin(), sessionId, customerId, protectedData, plainData)
 
 	if err != nil {
 		return "", "", fmt.Errorf("can't create refresh token. " + err.Error())
