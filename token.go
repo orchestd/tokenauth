@@ -4,6 +4,8 @@ import (
 	"context"
 	"encoding/json"
 	"fmt"
+	"time"
+
 	"github.com/golang-jwt/jwt"
 	"github.com/google/uuid"
 	"github.com/orchestd/dependencybundler/interfaces/cache"
@@ -11,10 +13,11 @@ import (
 	"github.com/orchestd/dependencybundler/interfaces/credentials"
 	"github.com/orchestd/serviceerror"
 	"github.com/orchestd/sharedlib/encryption"
-	"time"
 )
 
 var jwtSecretFirst = fmt.Sprint("tok", 2021, []byte("65"))
+
+const ExpClaim = expClaim
 
 const accessTokenLifeTimeMin = 5
 const refreshTokenLifeTimeMin = 2 * 365 * 24 * 60
@@ -161,6 +164,7 @@ func (jwtToken jwtToken) ValidateAndGetData(c context.Context, now time.Time, to
 	if err != nil {
 		return nil, nil, fmt.Errorf("can't unmarshal plain data. " + err.Error())
 	}
+	plainData[expClaim] = atClaims[expClaim]
 
 	encryptedData := atClaims[dataClaim].(string)
 	decryptedData, err := encryption.DecryptBase64AES(encryptKey, encryptedData)
