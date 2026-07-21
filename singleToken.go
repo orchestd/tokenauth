@@ -14,10 +14,6 @@ func (jwtToken jwtToken) VerifyPayload(token string) (jwt.MapClaims, error) {
 }
 
 func (jwtToken jwtToken) signPayload(claims jwt.MapClaims) (string, error) {
-	encryptKey := jwtToken.credentials.GetCredentials().EncryptKey
-	if encryptKey == "" {
-		return "", fmt.Errorf("could not get credentials by key encryptKey")
-	}
 	at := jwt.NewWithClaims(jwt.SigningMethodHS256, claims)
 	secret, err := jwtToken.getSecret()
 	if err != nil {
