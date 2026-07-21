@@ -11,4 +11,7 @@ type TokenBase interface {
 	ValidateAndUseRefreshToken(c context.Context, now time.Time, token string) (map[string]interface{}, map[string]interface{}, error)
 	RemoveRefreshToken(c context.Context, now time.Time, token string) error
 	RemoveRefreshTokenById(c context.Context, id string) error
+
+	SignPayload(c context.Context, now time.Time, plainData map[string]interface{}) (string, error)
+	VerifyPayload(c context.Context, now time.Time, token string) (map[string]interface{}, error)
 }
