@@ -2,6 +2,7 @@ package tokenauth
 
 import (
 	"context"
+	"github.com/golang-jwt/jwt"
 	"time"
 )
 
@@ -12,6 +13,6 @@ type TokenBase interface {
 	RemoveRefreshToken(c context.Context, now time.Time, token string) error
 	RemoveRefreshTokenById(c context.Context, id string) error
 
-	SignPayload(c context.Context, now time.Time, plainData map[string]interface{}) (string, error)
-	VerifyPayload(c context.Context, now time.Time, token string) (map[string]interface{}, error)
+	SignPayload(plainData jwt.MapClaims) (string, error)
+	VerifyPayload(token string) (jwt.MapClaims, error)
 }
