@@ -3,13 +3,17 @@ package tokenauth
 import (
 	"context"
 	"encoding/json"
-	"github.com/gin-gonic/gin"
 	"net/http"
 	"time"
+
+	"github.com/gin-gonic/gin"
 )
 
 const tokenHeader = "token"
 const TokenDataContextKey = "tokenData"
+const UserClaimsContextKey = "userClaims"
+const JwtContextKey = "jwt"
+const AccessTokenCookieName = "AccessToken"
 
 type PathToExcludeGetter interface {
 	GetPathToExclude() []string
@@ -48,4 +52,45 @@ func CheckTokenMiddleware(baseToken TokenBase, pathToExcludeGetter PathToExclude
 		c.Request = c.Request.WithContext(ctx)
 		c.Next()
 	}
+}
+
+func ValidateJWTMiddleware(tokenBase TokenBase) gin.HandlerFunc {
+	return func(ginCtx *gin.Context) {
+		cookie, err := ginCtx.Cookie(AccessTokenCookieName)
+		if err != nil {
+			ginCtx.AbortWithStatusJSON(http.StatusUnauthorized, gin.H{"error": "Missing authorization cookie"})
+			return
+		}
+
+		claims, _, err := tokenBase.ValidateAndGetData(ginCtx.Request.Context(), time.Now(), cookie)
+
+		ctx := context.WithValue(ginCtx.Request.Context(), UserClaimsContextKey, claims)
+		ctx = context.WithValue(ctx, JwtContextKey, cookie)
+		ginCtx.Request = ginCtx.Request.WithContext(ctx)
+		ginCtx.Next()
+	}
+}
+
+// Helper to safely pull claims out of context in business handlers
+func ClaimsFromContext[T any](ctx context.Context) (*T, bool) {
+	claimsany := ctx.Value(UserClaimsContextKey)
+	if claimsany == nil {
+		return nil, false
+	}
+
+	if claims, ok := claimsany.(T); ok {
+		return &claims, true
+	}
+
+	bytes, err := json.Marshal(claimsany)
+	if err != nil {
+		return nil, false
+	}
+
+	var result T
+	if err := json.Unmarshal(bytes, &result); err != nil {
+		return nil, false
+	}
+
+	return &result, true
 }
